@@ -15,7 +15,7 @@ export default function Home() {
       <section className="hero container">
         <div className="hero-copy">
           <div className="eyebrow">
-            <span className="live-dot" /> TU CIUDAD. TU RITMO. TUS REGLAS.
+            <span className="live-dot" /> EL FITNESS SE MUEVE CONTIGO
           </div>
           <h1>
             ENTRENA
@@ -40,14 +40,14 @@ export default function Home() {
             </Link>
           </div>
           <div className="hero-bottom">
-            <span className="mono">UN PASE. NUEVAS POSIBILIDADES.</span>
+            <span className="mono">PRIMERA VERSIÓN · DEMO</span>
             <ArrowDown size={19} />
           </div>
         </div>
         <div className="hero-visual">
           <img
-            src="/images/hero.jpg"
-            alt="Equipamiento en un gimnasio: fotografía referencial DEMO"
+            src="/images/athlete-editorial.png"
+            alt="Atleta en entrenamiento: fotografía referencial DEMO"
             fetchPriority="high"
           />
           <span className="image-label mono">
@@ -64,6 +64,29 @@ export default function Home() {
             </span>
           </div>
           <span className="photo-credit mono">FOTO REFERENCIAL · DEMO</span>
+        </div>
+      </section>
+      <section className="mobile-process" aria-label="Tu recorrido">
+        <div>
+          <strong>01</strong>
+          <span>
+            <h3>Explora gimnasios</h3>
+            <p>Conoce los espacios disponibles.</p>
+          </span>
+        </div>
+        <div>
+          <strong>02</strong>
+          <span>
+            <h3>Elige tu acceso</h3>
+            <p>Un pase o varias visitas.</p>
+          </span>
+        </div>
+        <div>
+          <strong>03</strong>
+          <span>
+            <h3>Entrena a tu ritmo</h3>
+            <p>Cuando el sistema esté conectado, usa tu pase.</p>
+          </span>
         </div>
       </section>
       <section className="search-section container">

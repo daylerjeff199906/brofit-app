@@ -2,6 +2,8 @@
 
 Entrena donde quieras.
 
+Actualización de maquetas: ver [docs/MOCKUPS.md](docs/MOCKUPS.md). Incluye registro, login, recuperación por pasos, mi espacio, perfil, pases y actividad en modo DEMO, además de la adaptación de las pantallas públicas a las referencias visuales. Los formularios validan datos de prueba sin crear cuentas ni persistir contraseñas.
+
 Primera entrega: frontend navegable de descubrimiento de gimnasios, siguiendo `docs/PROJECT.md`, `docs/DESIGN.md` y la iteración 1 de `docs/BUILD_PROMPT.md`.
 
 ## Stack y decisión
@@ -79,3 +81,5 @@ Imágenes de Unsplash descargadas como assets locales bajo su [licencia](https:/
 - gym-3.jpg: images.unsplash.com/photo-1571902943202-507ec2618e8f
 
 Las fuentes se distribuyen mediante @fontsource, con las licencias incluidas en sus paquetes.
+
+La fotografía editorial `athlete-editorial.png` fue generada con ImageGen para las maquetas. El recurso `athlete.jpg` corresponde a images.unsplash.com/photo-1518310383802-640c2de311b2 y se conserva como alternativa de referencia. Barlow Condensed se añadió como tipografía de titulares para seguir las nuevas capturas.

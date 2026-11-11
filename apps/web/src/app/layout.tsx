@@ -5,8 +5,11 @@ import "@fontsource/space-grotesk/400.css";
 import "@fontsource/space-grotesk/500.css";
 import "@fontsource/space-grotesk/700.css";
 import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource/barlow-condensed/700.css";
+import "@fontsource/barlow-condensed/800-italic.css";
 import "@brofit/ui/tokens.css";
 import "./globals.css";
+import "./mockups.css";
 import { Header, Footer } from "@/components/shell";
 export const metadata: Metadata = {
   title: {
