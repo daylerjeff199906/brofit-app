@@ -1,0 +1,16 @@
+:root {
+  --bf-lime: #c9ff3f;
+  --bf-lime-hover: #a6e100;
+  --bf-ink: #0b0b0b;
+  --bf-carbon: #171717;
+  --bf-cream: #f5f2e8;
+  --bf-white: #ffffff;
+  --bf-cement: #9ca3af;
+  --bf-orange: #ff5a00;
+  --bf-border: #404040;
+  --bf-font-display: "Archivo", sans-serif;
+  --bf-font-body: "Space Grotesk", sans-serif;
+  --bf-font-mono: "IBM Plex Mono", monospace;
+  --bf-radius-sm: 4px;
+  --bf-radius-md: 8px;
+}

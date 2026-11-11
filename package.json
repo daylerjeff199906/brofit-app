@@ -1,0 +1,24 @@
+{
+  "name": "brofit",
+  "private": true,
+  "packageManager": "pnpm@10.28.2",
+  "scripts": {
+    "dev": "turbo dev",
+    "dev:web": "pnpm --filter @brofit/web dev",
+    "dev:api": "pnpm --filter @brofit/api dev",
+    "build": "turbo build && node scripts/prepare-static.mjs",
+    "typecheck": "turbo typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "test": "pnpm --filter @brofit/api exec tsx --test ../../tests/*.test.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "prettier": "^3.8.0",
+    "turbo": "^2.8.0",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.72.2"
+  }
+}

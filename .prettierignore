@@ -1,0 +1,8 @@
+pnpm-lock.yaml
+.next
+out
+dist
+node_modules
+docs/PROJECT.md
+docs/DESIGN.md
+docs/BUILD_PROMPT.md
