@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Mark } from "@brofit/ui";
 import { ArrowUpRight, Menu, X } from "lucide-react";
+import { useSession } from "./session";
 export function Logo() {
   return (
     <Link href="/" className="logo" aria-label="BROFIT — ya, inicio">
@@ -14,17 +15,16 @@ export function Logo() {
   );
 }
 export function Header() {
+  const { user } = useSession();
   const [open, setOpen] = useState(false);
   const path = usePathname();
-  const account = path.startsWith("/app");
   return (
     <>
       <a className="skip-link" href="#contenido">
         Saltar al contenido
       </a>
       <div className="prototype-bar">
-        BROFIT — YA / PROTOTIPO VISUAL · DEMO ·{" "}
-        {account ? "SIN SESIÓN REAL" : "SIN COMPRAS REALES"}
+        BROFIT — YA / ENTORNO SANDBOX · GIMNASIOS DE PRUEBA · SIN COBROS REALES
       </div>
       <header className="header">
         <div className="container nav-wrap">
@@ -65,18 +65,17 @@ export function Header() {
             ))}
             <Link
               className="nav-login"
-              href={account ? "/app/perfil" : "/login"}
+              href={user ? "/app/perfil" : "/login"}
               onClick={() => setOpen(false)}
             >
-              {account ? "Mi perfil (DEMO)" : "Iniciar sesión"}
+              {user ? "Mi perfil" : "Iniciar sesión"}
             </Link>
             <Link
               className="button primary nav-cta"
-              href={account ? "/app" : "/registro"}
+              href={user ? "/app" : "/registro"}
               onClick={() => setOpen(false)}
             >
-              {account ? "Mi espacio" : "Crear cuenta"}{" "}
-              <ArrowUpRight size={16} />
+              {user ? "Mi espacio" : "Crear cuenta"} <ArrowUpRight size={16} />
             </Link>
           </nav>
         </div>
@@ -106,7 +105,7 @@ export function Footer() {
           <h3>Cuenta</h3>
           <Link href="/login">Iniciar sesión</Link>
           <Link href="/registro">Crear cuenta</Link>
-          <Link href="/app">Mi espacio (DEMO)</Link>
+          <Link href="/app">Mi espacio</Link>
           <Link href="/app/perfil">Mi perfil</Link>
           <Link href="/app/pases">Mis pases</Link>
           <Link href="/app/actividad">Mi actividad</Link>

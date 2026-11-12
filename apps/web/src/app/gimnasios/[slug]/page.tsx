@@ -1,11 +1,8 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { Dumbbell, MapPin } from "lucide-react";
-import { gyms } from "@/lib/demo";
+import type { Gym } from "@brofit/types";
+import { serverApi } from "@/lib/server-api";
 import { AccessMockup } from "@/components/access-mockup";
-export function generateStaticParams() {
-  return gyms.map((g) => ({ slug: g.slug }));
-}
 export async function generateMetadata({
   params,
 }: {
@@ -13,7 +10,7 @@ export async function generateMetadata({
 }) {
   const { slug } = await params;
   return {
-    title: gyms.find((g) => g.slug === slug)?.name || "Gimnasio no encontrado",
+    title: (await serverApi<Gym>("/gyms/" + encodeURIComponent(slug))).name,
   };
 }
 export default async function Page({
@@ -22,8 +19,7 @@ export default async function Page({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const g = gyms.find((g) => g.slug === slug);
-  if (!g) notFound();
+  const g = await serverApi<Gym>("/gyms/" + encodeURIComponent(slug));
   const words = g.name.split(" ");
   return (
     <>
@@ -66,8 +62,8 @@ export default async function Page({
           <strong>DEMO</strong>
           <p>
             Este establecimiento y sus fotos son ejemplos de interfaz. No se
-            trata de un gimnasio afiliado ni existen precios o cupos
-            habilitados.
+            trata de un gimnasio afiliado. Los precios y los ingresos de este
+            entorno son de prueba.
           </p>
         </div>
         <div className="gym-gallery">
@@ -257,7 +253,7 @@ export default async function Page({
               </ol>
             </section>
           </div>
-          <AccessMockup />
+          <AccessMockup gymId={g.id} />
         </div>
       </div>
       <section className="detail-final">

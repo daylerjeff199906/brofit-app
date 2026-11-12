@@ -1,9 +1,17 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { Button } from "@brofit/ui";
-export function AccessMockup() {
+import { useResource } from "./use-resource";
+import { ResourceMessage } from "./account-live";
+import { soles, type Offer } from "@/lib/api";
+export function AccessMockup({ gymId }: { gymId: string }) {
   const [membership, setMembership] = useState(false);
+  const resource = useResource<{ data: Offer[] }>(
+    "/offers?gymId=" + encodeURIComponent(gymId),
+  );
+  const offer = resource.data?.data.find(
+    (o) => o.kind === (membership ? "MEMBERSHIP" : "DAY_PASS"),
+  );
   return (
     <aside className="access-panel" id="acceso">
       <p className="eyebrow lime">ACCESO AL GIMNASIO</p>
@@ -20,45 +28,52 @@ export function AccessMockup() {
           Multigym
         </button>
       </div>
-      <p className="eyebrow">
-        {membership ? "MEMBRESÍA MULTIGIMNASIO" : "PASE INDIVIDUAL"} / DEMO
-      </p>
-      <h3>{membership ? "VARIAS VISITAS" : "1 INGRESO"}</h3>
-      <p>
-        {membership
-          ? "Una membresía para visitar distintos gimnasios elegibles, con cupo y vigencia definidos."
-          : "Para una visita puntual a este gimnasio, con condiciones publicadas antes del pago."}
-      </p>
-      <div className="access-price">
-        <p className="eyebrow">PRECIO</p>
-        <strong>Por definir</strong>
-        <p>No hay tarifas reales disponibles.</p>
-      </div>
-      <dl className="access-labels">
-        <div>
-          <dt>Disponibilidad</dt>
-          <dd>No habilitada</dd>
-        </div>
-        <div>
-          <dt>{membership ? "Visitas incluidas" : "Horario de ingreso"}</dt>
-          <dd>Por confirmar</dd>
-        </div>
-        <div>
-          <dt>Duración</dt>
-          <dd>Por confirmar</dd>
-        </div>
-        {membership && (
-          <div>
-            <dt>Gimnasios elegibles</dt>
-            <dd>Por confirmar</dd>
+      <ResourceMessage {...resource} />
+      {offer ? (
+        <>
+          <p className="eyebrow">
+            {offer.kind === "MEMBERSHIP" ? "MEMBRESÍA" : "PASE INDIVIDUAL"} /
+            SANDBOX
+          </p>
+          <h3>
+            {offer.visits} {offer.visits === 1 ? "INGRESO" : "VISITAS"}
+          </h3>
+          <p>{offer.description}</p>
+          <div className="access-price">
+            <p className="eyebrow">PRECIO DE PRUEBA</p>
+            <strong>{soles(offer.priceCents)}</strong>
+            <p>No se realiza ningún cobro real.</p>
           </div>
-        )}
-      </dl>
-      <Button disabled>Compra no disponible · DEMO</Button>
-      <p className="small-note">
-        Cuando haya ofertas reales, aquí verás el precio en soles, la vigencia y
-        las restricciones antes de continuar.
-      </p>
+          <dl className="access-labels">
+            <div>
+              <dt>Vigencia</dt>
+              <dd>{offer.validityDays} días</dd>
+            </div>
+            <div>
+              <dt>Máximo por día</dt>
+              <dd>{offer.maxPerDay} visita</dd>
+            </div>
+            <div>
+              <dt>Máximo por gimnasio</dt>
+              <dd>{offer.maxPerGym} visitas</dd>
+            </div>
+            <div>
+              <dt>Gimnasios elegibles</dt>
+              <dd>{offer.gyms.length}</dd>
+            </div>
+          </dl>
+          <ul className="conditions">
+            {offer.conditions.map((c) => (
+              <li key={c}>{c}</li>
+            ))}
+          </ul>
+          <Link className="button primary" href={`/checkout/${offer.id}`}>
+            Elegir este acceso ↗
+          </Link>
+        </>
+      ) : !resource.loading && !resource.error ? (
+        <p>Esta modalidad no está disponible actualmente.</p>
+      ) : null}
       <Link className="lime-link" href="/planes">
         Comparar opciones de acceso ↗
       </Link>

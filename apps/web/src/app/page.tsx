@@ -8,8 +8,10 @@ import {
 } from "lucide-react";
 import { GymCard } from "@brofit/ui";
 import { HomeSearch, Plans, FAQ, Steps } from "@/components/experiences";
-import { gyms } from "@/lib/demo";
-export default function Home() {
+import type { Gym } from "@brofit/types";
+import { serverApi } from "@/lib/server-api";
+export default async function Home() {
+  const { data: gyms } = await serverApi<{ data: Gym[] }>("/gyms");
   return (
     <>
       <section className="hero container">

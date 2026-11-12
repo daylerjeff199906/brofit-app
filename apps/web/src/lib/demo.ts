@@ -113,7 +113,7 @@ export const faqs = [
   ],
   [
     "¿Cómo ingreso al gimnasio?",
-    "La versión operativa emitirá un pase tras verificar el pago y validará el ingreso en servidor. Los pagos y el QR aún no están habilitados en esta demo.",
+    "Tras una compra sandbox se emite un pase de prueba. Genera un QR temporal en Mis pases y presenta el código en recepción. El gimnasio lo valida en el servidor y se descuenta una sola visita.",
   ],
   [
     "¿Tengo que compartir mi ubicación?",

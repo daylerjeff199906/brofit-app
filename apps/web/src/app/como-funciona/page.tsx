@@ -16,10 +16,9 @@ export default function Page() {
       <Steps />
       <div className="info-strip">
         <p>
-          <strong>Estás explorando un prototipo.</strong> Hoy puedes buscar
-          gimnasios ficticios, comparar precios DEMO y leer condiciones.
-          Registro, pagos, pases y validación de ingreso estarán disponibles en
-          próximas etapas.
+          <strong>Estás en el entorno sandbox.</strong> Puedes crear tu cuenta,
+          verificar tu correo, adquirir un pase de prueba y validar un ingreso
+          desde el portal del gimnasio. No se realizan cobros reales.
         </p>
       </div>
       <section className="section">

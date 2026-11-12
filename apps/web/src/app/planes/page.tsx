@@ -14,8 +14,8 @@ export default function Page() {
         definidas.
       </p>
       <p className="demo-note">
-        <span>DEMO</span> Precios, vigencias y condiciones de ejemplo. Compras
-        no habilitadas.
+        <span>SANDBOX</span> Precios, vigencias y condiciones de ejemplo. Las
+        compras de prueba no cobran dinero real.
       </p>
       <Plans />
       <div className="info-strip">

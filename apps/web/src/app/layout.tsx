@@ -10,7 +10,10 @@ import "@fontsource/barlow-condensed/800-italic.css";
 import "@brofit/ui/tokens.css";
 import "./globals.css";
 import "./mockups.css";
+import "./live.css";
 import { Header, Footer } from "@/components/shell";
+import { SessionProvider } from "@/components/session";
+export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: {
     default: "BROFIT — ya | Entrena donde quieras.",
@@ -22,11 +25,13 @@ export const metadata: Metadata = {
 };
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es-PE">
+    <html lang="es-PE" data-scroll-behavior="smooth">
       <body>
-        <Header />
-        <main id="contenido">{children}</main>
-        <Footer />
+        <SessionProvider>
+          <Header />
+          <main id="contenido">{children}</main>
+          <Footer />
+        </SessionProvider>
       </body>
     </html>
   );

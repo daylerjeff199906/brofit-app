@@ -1,5 +1,5 @@
-import { AuthMockup } from "@/components/auth-mockup";
+import { AuthScreen } from "@/components/auth-form";
 export const metadata = { title: "Crear cuenta · DEMO" };
 export default function Page() {
-  return <AuthMockup mode="registro" />;
+  return <AuthScreen mode="registro" />;
 }

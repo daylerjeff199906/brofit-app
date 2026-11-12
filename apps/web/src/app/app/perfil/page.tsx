@@ -1,5 +1,5 @@
-import { ProfileMockup } from "@/components/profile-mockup";
-export const metadata = { title: "Mi perfil · DEMO" };
+import { Profile } from "@/components/profile-live";
+export const metadata = { title: "Mi perfil" };
 export default function Page() {
-  return <ProfileMockup />;
+  return <Profile />;
 }

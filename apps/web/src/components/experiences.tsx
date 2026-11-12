@@ -20,9 +20,16 @@ import {
   Modal,
   Badge,
 } from "@brofit/ui";
-import { gyms, plans, faqs } from "@/lib/demo";
+import { faqs } from "@/lib/demo";
+import type { Gym } from "@brofit/types";
+import { useResource } from "./use-resource";
+import { ResourceMessage } from "./account-live";
+import { soles, type Offer } from "@/lib/api";
+import Link from "next/link";
 import { filterGyms } from "@/lib/catalog";
 export function HomeSearch() {
+  const resource = useResource<{ data: Gym[] }>("/gyms?pageSize=100");
+  const gyms = resource.data?.data || [];
   const [district, setDistrict] = useState("");
   const [query, setQuery] = useState("");
   return (
@@ -61,6 +68,8 @@ export function HomeSearch() {
   );
 }
 export function Catalog() {
+  const resource = useResource<{ data: Gym[] }>("/gyms?pageSize=100");
+  const gyms = resource.data?.data || [];
   const [query, setQuery] = useState("");
   const [district, setDistrict] = useState("");
   const [category, setCategory] = useState("Todos");
@@ -93,6 +102,7 @@ export function Catalog() {
   }
   return (
     <>
+      <ResourceMessage {...resource} />
       <div className="catalog-controls">
         <Input
           label="Busca por nombre, distrito o equipamiento"
@@ -218,15 +228,24 @@ export function Catalog() {
   );
 }
 export function Plans() {
+  const resource = useResource<{ data: Offer[] }>("/offers");
+  const available = resource.data?.data || [];
+  const plans = available.filter(
+    (p, i) =>
+      p.kind === "MEMBERSHIP" ||
+      available.findIndex((o) => o.kind === "DAY_PASS") === i,
+  );
   const [selected, setSelected] = useState<string | null>(null);
   const plan = plans.find((p) => p.id === selected);
   return (
     <>
       <div className="plans-grid">
+        <ResourceMessage {...resource} />
         {plans.map((p, i) => (
           <PlanCard
             key={p.id}
             {...p}
+            price={p.priceCents / 100}
             featured={i === 1}
             onSelect={() => setSelected(p.id)}
           />
@@ -237,7 +256,7 @@ export function Plans() {
         title={plan?.name || "Condiciones"}
         onClose={() => setSelected(null)}
       >
-        <Badge>OFERTA DEMO · NO DISPONIBLE PARA COMPRA</Badge>
+        <Badge>OFERTA DEMO · PAGO SANDBOX</Badge>
         <p>{plan?.description}</p>
         <ul className="conditions">
           {plan?.conditions.map((c) => (
@@ -248,7 +267,11 @@ export function Plans() {
           Los precios y la elegibilidad son ejemplos. La política de cancelación
           y reembolso debe definirse antes del piloto comercial.
         </p>
-        <Button disabled>Compras aún no habilitadas</Button>
+        {plan && (
+          <Link className="button primary" href={`/checkout/${plan.id}`}>
+            Continuar con {soles(plan.priceCents)} · sandbox ↗
+          </Link>
+        )}
       </Modal>
     </>
   );
@@ -286,7 +309,7 @@ export function Steps() {
         {
           icon: ScanLine,
           title: "Llega. Valida. Entrena.",
-          copy: "En la versión operativa, tu pase se validará al ingresar. Por ahora, explora la demo.",
+          copy: "Genera tu código temporal y valídalo en recepción. En este entorno, los ingresos y pagos son de prueba.",
         },
       ].map((s, i) => (
         <article key={s.title}>
@@ -301,58 +324,4 @@ export function Steps() {
     </div>
   );
 }
-export function OfferButton() {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <Button onClick={() => setOpen(true)}>
-        Ver condiciones del pase <ArrowUpRight size={18} />
-      </Button>
-      <Modal
-        open={open}
-        title="Tu pase, sin sorpresas."
-        onClose={() => setOpen(false)}
-      >
-        <Badge>DEMO · SIN VENTA REAL</Badge>
-        <ul className="conditions">
-          <li>Una visita, solo al gimnasio seleccionado.</li>
-          <li>Vigencia de ejemplo: 7 días desde la emisión.</li>
-          <li>Ingreso durante el horario publicado; sujeto a aforo.</li>
-          <li>No incluye clases ni servicios adicionales.</li>
-        </ul>
-        <p>
-          Este gimnasio es ficticio. Los pagos y la emisión de pases aún no
-          están habilitados.
-        </p>
-        <Button disabled>Compra no disponible</Button>
-      </Modal>
-    </>
-  );
-}
-export function PartnerInterest() {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <Button onClick={() => setOpen(true)}>
-        Afiliar mi gimnasio <ArrowUpRight size={19} />
-      </Button>
-      <Modal
-        open={open}
-        title="El siguiente espacio podría ser el tuyo."
-        onClose={() => setOpen(false)}
-      >
-        <Badge>PILOTO EN PREPARACIÓN</Badge>
-        <p>
-          El registro de aliados todavía no está habilitado. No recopilamos ni
-          enviamos datos en esta demostración.
-        </p>
-        <p>
-          Para el piloto se verificará el establecimiento y se acordarán
-          horarios, equipamiento, precio por ingreso y restricciones antes de
-          publicar su ficha.
-        </p>
-        <Button onClick={() => setOpen(false)}>Entendido</Button>
-      </Modal>
-    </>
-  );
-}
+export { PartnerApplication as PartnerInterest } from "./partner-application";
