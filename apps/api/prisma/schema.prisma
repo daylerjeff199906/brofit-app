@@ -1,8 +1,222 @@
-// Foundation only. Domain models and migrations belong to iteration 2.
 generator client {
   provider = "prisma-client-js"
 }
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url = env("DATABASE_URL")
+}
+enum Role {
+  CUSTOMER
+  GYM_STAFF
+  PLATFORM_ADMIN
+}
+enum TokenKind {
+  VERIFY
+  RESET
+}
+enum GymStatus {
+  PENDING
+  ACTIVE
+  PAUSED
+}
+enum OfferKind {
+  DAY_PASS
+  MEMBERSHIP
+}
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+model User {
+  id String @id @default(cuid())
+  email String @unique
+  googleSub String? @unique
+  name String
+  lastName String
+  phone String?
+  passwordHash String
+  credentialVersion Int @default(0)
+  emailVerifiedAt DateTime?
+  role Role @default(CUSTOMER)
+  gymId String?
+  gym Gym? @relation(fields:[gymId],references:[id])
+  nearby Boolean @default(false)
+  newsletter Boolean @default(false)
+  createdAt DateTime @default(now())
+  sessions Session[]
+  tokens AuthToken[]
+  mailJobs MailJob[]
+  orders Order[]
+  passes Pass[]
+  checkIns CheckIn[]
+}
+model Session {
+  tokenHash String @id
+  userId String
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  credentialVersion Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([expiresAt])
+}
+model AuthToken {
+  tokenHash String @id
+  kind TokenKind
+  userId String
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  expiresAt DateTime
+  consumedAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([userId,kind])
+}
+model MailJob {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  encryptedPayload String
+  attempts Int @default(0)
+  availableAt DateTime @default(now())
+  lockedAt DateTime?
+  sentAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([sentAt,availableAt])
+}
+model RateBucket {
+  id String @id
+  count Int @default(1)
+  expiresAt DateTime
+  @@index([expiresAt])
+}
+model OAuthState {
+  stateHash String @id
+  encryptedVerifier String
+  nonce String
+  linkUserId String?
+  expiresAt DateTime
+}
+model Gym {
+  id String @id @default(cuid())
+  slug String @unique
+  name String
+  district String
+  address String
+  category String
+  equipment String[]
+  services String[]
+  hours String
+  image String
+  description String
+  demo Boolean @default(true)
+  status GymStatus @default(PENDING)
+  settlementCents Int @default(900)
+  staff User[]
+  offers Offer[]
+  checkIns CheckIn[]
+  createdAt DateTime @default(now())
+}
+model Offer {
+  id String @id @default(cuid())
+  name String
+  description String
+  kind OfferKind
+  priceCents Int
+  currency String @default("PEN")
+  visits Int
+  validityDays Int
+  maxPerDay Int @default(1)
+  maxPerGym Int
+  conditions String[]
+  active Boolean @default(true)
+  demo Boolean @default(true)
+  gyms Gym[]
+  orders Order[]
+}
+model Order {
+  id String @id @default(cuid())
+  userId String?
+  user User? @relation(fields:[userId],references:[id],onDelete:SetNull)
+  offerId String
+  offer Offer @relation(fields:[offerId],references:[id])
+  idempotencyKey String
+  requestHash String
+  status OrderStatus @default(PENDING)
+  priceCents Int
+  currency String
+  name String
+  visits Int
+  validityDays Int
+  maxPerDay Int
+  maxPerGym Int
+  eligibleGymIds String[]
+  conditions String[]
+  createdAt DateTime @default(now())
+  paidAt DateTime?
+  pass Pass?
+  payment Payment?
+  @@unique([userId,idempotencyKey])
+}
+model Payment {
+  id String @id @default(cuid())
+  orderId String @unique
+  order Order @relation(fields:[orderId],references:[id])
+  provider String
+  amountCents Int
+  confirmedAt DateTime @default(now())
+}
+model Pass {
+  id String @id @default(cuid())
+  userId String?
+  user User? @relation(fields:[userId],references:[id],onDelete:SetNull)
+  orderId String @unique
+  order Order @relation(fields:[orderId],references:[id])
+  name String
+  remaining Int
+  visits Int
+  expiresAt DateTime
+  maxPerDay Int
+  maxPerGym Int
+  eligibleGymIds String[]
+  createdAt DateTime @default(now())
+  tokens CheckInToken[]
+  checkIns CheckIn[]
+}
+model CheckInToken {
+  tokenHash String @id
+  passId String
+  pass Pass @relation(fields:[passId],references:[id])
+  gymId String
+  expiresAt DateTime
+  consumedAt DateTime?
+  checkIn CheckIn?
+}
+model CheckIn {
+  id String @id @default(cuid())
+  tokenHash String @unique
+  token CheckInToken @relation(fields:[tokenHash],references:[tokenHash])
+  userId String?
+  user User? @relation(fields:[userId],references:[id],onDelete:SetNull)
+  gymId String
+  gym Gym @relation(fields:[gymId],references:[id])
+  passId String
+  pass Pass @relation(fields:[passId],references:[id])
+  validatedBy String
+  createdAt DateTime @default(now())
+  settlement Settlement?
+  @@index([passId,gymId,createdAt])
+}
+model Settlement {
+  id String @id @default(cuid())
+  checkInId String @unique
+  checkIn CheckIn @relation(fields:[checkInId],references:[id])
+  amountCents Int
+  currency String @default("PEN")
+  createdAt DateTime @default(now())
+}
+model AuditLog {
+  id String @id @default(cuid())
+  actorId String
+  action String
+  entityId String
+  createdAt DateTime @default(now())
 }
