@@ -117,7 +117,7 @@ export class MailService implements OnModuleInit, OnModuleDestroy {
             where: { id: job.id },
             data: { sentAt: new Date(), lockedAt: null, encryptedPayload: "" },
           });
-        } catch {
+        } catch (error) {
           await this.db.mailJob.updateMany({
             where: { id: job.id },
             data: {
@@ -131,6 +131,10 @@ export class MailService implements OnModuleInit, OnModuleDestroy {
             JSON.stringify({
               event: "mail_delivery_retry",
               attempt: job.attempts + 1,
+              code:
+                error && typeof error === "object" && "code" in error
+                  ? String(error.code).slice(0, 64)
+                  : "UNKNOWN",
             }),
           );
         }

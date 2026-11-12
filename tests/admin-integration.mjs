@@ -20,7 +20,7 @@ async function call(path, method = "GET", body, cookie) {
   };
 }
 async function token(email, subject, since) {
-  for (let n = 0; n < 50; n++) {
+  for (let n = 0; n < 75; n++) {
     const list = await fetch("http://localhost:8026/api/v1/messages").then(
       (r) => r.json(),
     );

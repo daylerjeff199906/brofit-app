@@ -22,5 +22,37 @@ services:
     ports:
       - "127.0.0.1:1026:1025"
       - "127.0.0.1:8026:8025"
+  api:
+    profiles: [full]
+    build:
+      context: ..
+      dockerfile: infra/api.Dockerfile
+    env_file: ../apps/api/.env
+    environment:
+      DATABASE_URL: postgresql://brofit:brofit_local@postgres:5432/brofit
+      HOST: 0.0.0.0
+      PORT: 4100
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      NODE_ENV: development
+      SEED_DEMO: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    ports:
+      - "127.0.0.1:4100:4100"
+  web:
+    profiles: [full]
+    build:
+      context: ..
+      dockerfile: infra/web.Dockerfile
+    environment:
+      API_BASE_URL: http://api:4100
+      WEB_BASE_URL: http://localhost:3001
+    depends_on: [api]
+    ports:
+      - "127.0.0.1:3001:3001"
 volumes:
   postgres_data:

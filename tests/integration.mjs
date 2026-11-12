@@ -37,7 +37,8 @@ async function request(
   };
 }
 async function mailToken(email, subject, since = 0) {
-  for (let n = 0; n < 35; n++) {
+  // Allow the worker's first retry (10s backoff after a connection timeout).
+  for (let n = 0; n < 75; n++) {
     const messages = await fetch(mailbox + "/messages").then((r) => r.json());
     const item = messages.messages?.find(
       (m) =>
@@ -382,15 +383,21 @@ test("plataforma: correo, sesión, sandbox, canje concurrente, permisos y recupe
 });
 test("el login limita intentos por cuenta y rechaza Origin ausente", async () => {
   const email = `rate-${randomUUID()}@example.test`;
-  let status;
-  for (let n = 0; n < 12; n++)
-    status = (
-      await request(n % 2 ? "/auth/LOGIN" : "/auth/login", {
-        method: "POST",
-        body: { email, password: "wrong" },
-      })
-    ).status;
-  assert.equal(status, 429);
+  const statuses = [];
+  // Up to 21 attempts cover a run crossing the fixed 15-minute window boundary.
+  for (let n = 0; n < 21 && !statuses.includes(429); n++)
+    statuses.push(
+      (
+        await request(n % 2 ? "/auth/LOGIN" : "/auth/login", {
+          method: "POST",
+          body: { email, password: "wrong" },
+        })
+      ).status,
+    );
+  assert.ok(
+    statuses.includes(429),
+    "Both route spellings must share the account limit",
+  );
   assert.equal(
     (
       await request("/auth/logout", {

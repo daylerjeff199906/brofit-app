@@ -1,0 +1,12 @@
+**/node_modules
+**/.next
+**/dist
+**/out
+**/.env
+**/.env.local
+.git
+.turbo
+artifacts
+test-results
+playwright-report
+artifacts-audit.json

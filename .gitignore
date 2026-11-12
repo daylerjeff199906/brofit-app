@@ -4,6 +4,11 @@ out/
 dist/
 .turbo/
 .env
+.env.*
+!.env.example
 .env.local
 *.tsbuildinfo
 artifacts/
+/artifacts-audit.json
+/test-results/
+/playwright-report/
