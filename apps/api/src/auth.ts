@@ -109,6 +109,20 @@ export class AuthService {
       googleConnected: !!user.googleSub,
     };
   }
+  async application(
+    userId: string,
+    data: { gymName: string; district: string; message: string },
+  ) {
+    await this.db.partnerApplication.upsert({
+      where: { userId },
+      create: { userId, ...data },
+      update: data,
+    });
+    return {
+      message:
+        "Solicitud guardada. El equipo la revisará antes de afiliar el gimnasio.",
+    };
+  }
   async login(email: string, password: string, response: Response) {
     const user = await this.db.user.findUnique({ where: { email } });
     const valid = await verifyPassword(
@@ -234,7 +248,7 @@ export class AuthService {
     });
   }
   async export(user: User) {
-    const [profile, orders, passes, activity] = await Promise.all([
+    const [profile, orders, passes, activity, application] = await Promise.all([
       this.db.user.findUnique({ where: { id: user.id }, select: safeUser }),
       this.db.order.findMany({
         where: { userId: user.id },
@@ -255,13 +269,31 @@ export class AuthService {
         where: { userId: user.id },
         select: { id: true, gymId: true, createdAt: true },
       }),
+      this.db.partnerApplication.findUnique({
+        where: { userId: user.id },
+        select: {
+          gymName: true,
+          district: true,
+          message: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      }),
     ]);
-    return { profile, orders, passes, activity };
+    return { profile, orders, passes, activity, application };
   }
   async delete(user: User, password: string, response: Response) {
     if (!(await verifyPassword(password, user.passwordHash)))
       throw new UnauthorizedException("Confirma tu contraseña actual.");
     await this.db.serializable(async (tx) => {
+      const current = await tx.user.findUnique({
+        where: { id: user.id },
+        select: { credentialVersion: true },
+      });
+      if (!current || current.credentialVersion !== user.credentialVersion)
+        throw new UnauthorizedException(
+          "Tu sesión cambió. Vuelve a iniciar sesión.",
+        );
       await tx.auditLog.deleteMany({ where: { actorId: user.id } });
       await tx.checkInToken.deleteMany({
         where: { pass: { userId: user.id }, consumedAt: null },
@@ -393,7 +425,7 @@ export class AuthService {
         });
       }
       await this.session(user, response);
-      response.redirect(new URL("/app", config.WEB_BASE_URL).toString());
+      return new URL("/app", config.WEB_BASE_URL).toString();
     } finally {
       response.clearCookie("brofit_oauth", {
         ...cookieOptions,

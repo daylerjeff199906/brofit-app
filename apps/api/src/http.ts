@@ -79,6 +79,10 @@ export class ApiExceptionFilter implements ExceptionFilter {
         JSON.stringify({
           event: "request_failure",
           type: error instanceof Error ? error.constructor.name : "unknown",
+          code:
+            error instanceof Prisma.PrismaClientKnownRequestError
+              ? error.code
+              : undefined,
         }),
       );
     host

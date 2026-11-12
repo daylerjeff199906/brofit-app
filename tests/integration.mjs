@@ -385,7 +385,7 @@ test("el login limita intentos por cuenta y rechaza Origin ausente", async () =>
   let status;
   for (let n = 0; n < 12; n++)
     status = (
-      await request("/auth/login", {
+      await request(n % 2 ? "/auth/LOGIN" : "/auth/login", {
         method: "POST",
         body: { email, password: "wrong" },
       })

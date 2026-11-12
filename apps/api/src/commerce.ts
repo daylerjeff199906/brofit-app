@@ -230,6 +230,7 @@ export class CommerceService {
     assertStaff(user, gymId);
     const tokenHash = hashToken(token);
     return this.db.serializable(async (tx) => {
+      await tx.$queryRaw`SELECT p."id" FROM "Pass" p JOIN "CheckInToken" t ON t."passId" = p."id" WHERE t."tokenHash" = ${tokenHash} AND t."gymId" = ${gymId} FOR UPDATE OF p`;
       const record = await tx.checkInToken.findUnique({
         where: { tokenHash },
         include: { pass: true, checkIn: true },

@@ -18,6 +18,8 @@ export class Database
       try {
         return await this.$transaction(work, {
           isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+          maxWait: 10000,
+          timeout: 15000,
         });
       } catch (error) {
         if (

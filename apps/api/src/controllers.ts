@@ -11,6 +11,7 @@ import {
   Res,
   Headers,
   Inject,
+  ForbiddenException,
 } from "@nestjs/common";
 import type { Request, Response } from "express";
 import { z } from "zod";
@@ -20,6 +21,7 @@ import { CatalogService } from "./catalog";
 import { CommerceService, assertStaff, assertAdmin } from "./commerce";
 import { parse, emailSchema, passwordSchema, tokenSchema } from "./http";
 import { config } from "./config";
+import { openApi } from "./openapi";
 const emailBody = z.object({ email: emailSchema }).strict();
 export const registerSchema = z
   .object({
@@ -116,7 +118,13 @@ export class AuthController {
         }),
         req.query,
       );
-      await this.auth.finishGoogle(req, res, data.code, data.state);
+      const destination = await this.auth.finishGoogle(
+        req,
+        res,
+        data.code,
+        data.state,
+      );
+      res.redirect(destination);
     } catch {
       res.clearCookie("brofit_oauth", {
         path: "/api/auth/google",
@@ -132,6 +140,9 @@ export class AuthController {
 }
 @Controller()
 export class PublicController {
+  @Get("openapi.json") docs() {
+    return openApi();
+  }
   constructor(
     @Inject(CatalogService) private readonly catalog: CatalogService,
     @Inject(Database) private readonly db: Database,
@@ -175,6 +186,23 @@ export class PublicController {
 }
 @Controller("me")
 export class AccountController {
+  @Post("partner-application") async application(
+    @Req() req: Request,
+    @Body() body: unknown,
+  ) {
+    const user = await this.auth.user(req);
+    const data = parse(
+      z
+        .object({
+          gymName: z.string().trim().min(2).max(120),
+          district: z.string().trim().min(2).max(80),
+          message: z.string().trim().min(10).max(2000),
+        })
+        .strict(),
+      body,
+    );
+    return this.auth.application(user.id, data);
+  }
   constructor(
     @Inject(AuthService) private readonly auth: AuthService,
     @Inject(CommerceService) private readonly commerce: CommerceService,
@@ -318,6 +346,50 @@ export class PartnerController {
 }
 @Controller("admin")
 export class AdminController {
+  @Get("applications") async applications(@Req() req: Request) {
+    assertAdmin(await this.auth.user(req));
+    return {
+      data: await this.db.partnerApplication.findMany({
+        include: { user: { select: { name: true, email: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 100,
+      }),
+    };
+  }
+  @Post("staff") async staff(@Req() req: Request, @Body() body: unknown) {
+    const actor = await this.auth.user(req);
+    assertAdmin(actor);
+    const data = parse(
+      z.object({ email: emailSchema, gymId: z.string().max(100) }).strict(),
+      body,
+    );
+    return this.db.serializable(async (tx) => {
+      const user = await tx.user.findUnique({ where: { email: data.email } });
+      if (!user || !user.emailVerifiedAt || user.role === "PLATFORM_ADMIN")
+        throw new ForbiddenException(
+          "Se requiere una cuenta verificada de cliente o aliado.",
+        );
+      const gym = await tx.gym.findUnique({ where: { id: data.gymId } });
+      if (!gym) throw new ForbiddenException("Gimnasio no disponible.");
+      await tx.user.update({
+        where: { id: user.id },
+        data: {
+          role: "GYM_STAFF",
+          gymId: gym.id,
+          credentialVersion: { increment: 1 },
+        },
+      });
+      await tx.session.deleteMany({ where: { userId: user.id } });
+      await tx.auditLog.create({
+        data: {
+          actorId: actor.id,
+          action: "STAFF_ASSIGNED",
+          entityId: user.id,
+        },
+      });
+      return { message: "Aliado asignado. Debe volver a iniciar sesión." };
+    });
+  }
   constructor(
     @Inject(AuthService) private readonly auth: AuthService,
     @Inject(Database) private readonly db: Database,
@@ -327,6 +399,88 @@ export class AdminController {
     return {
       data: await this.db.gym.findMany({ orderBy: { name: "asc" }, take: 100 }),
     };
+  }
+  @Post("gyms") async createGym(@Req() req: Request, @Body() body: unknown) {
+    const user = await this.auth.user(req);
+    assertAdmin(user);
+    const data = parse(
+      z
+        .object({
+          name: z.string().trim().min(2).max(120),
+          slug: z
+            .string()
+            .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+            .max(120),
+          district: z.string().trim().min(2).max(80),
+          address: z.string().max(250),
+          category: z.enum(["Musculación", "Funcional", "Cardio"]),
+          description: z.string().max(2000),
+          hours: z.string().max(500),
+          equipment: z.array(z.string().max(80)).max(50),
+          services: z.array(z.string().max(80)).max(30),
+          image: z.string().regex(/^\/images\/[a-zA-Z0-9-]+\.(jpg|png|webp)$/),
+        })
+        .strict(),
+      body,
+    );
+    return this.db.serializable(async (tx) => {
+      const gym = await tx.gym.create({
+        data: { ...data, demo: true, status: "PENDING" },
+      });
+      await tx.auditLog.create({
+        data: { actorId: user.id, action: "GYM_CREATED", entityId: gym.id },
+      });
+      return gym;
+    });
+  }
+  @Post("offers") async createOffer(
+    @Req() req: Request,
+    @Body() body: unknown,
+  ) {
+    const user = await this.auth.user(req);
+    assertAdmin(user);
+    const data = parse(
+      z
+        .object({
+          name: z.string().min(2).max(120),
+          description: z.string().max(2000),
+          kind: z.enum(["DAY_PASS", "MEMBERSHIP"]),
+          priceCents: z.number().int().min(100).max(10000000),
+          visits: z.number().int().min(1).max(100),
+          validityDays: z.number().int().min(1).max(365),
+          maxPerDay: z.number().int().min(1).max(10),
+          maxPerGym: z.number().int().min(1).max(100),
+          conditions: z.array(z.string().max(500)).min(1).max(30),
+          gymIds: z.array(z.string().max(100)).min(1).max(100),
+        })
+        .strict(),
+      body,
+    );
+    if (
+      data.kind === "DAY_PASS" &&
+      (data.visits !== 1 || data.gymIds.length !== 1)
+    )
+      throw new ForbiddenException(
+        "Un pase individual requiere una visita y un gimnasio.",
+      );
+    const { gymIds, ...offer } = data;
+    return this.db.serializable(async (tx) => {
+      const result = await tx.offer.create({
+        data: {
+          ...offer,
+          demo: true,
+          gyms: { connect: gymIds.map((id) => ({ id })) },
+        },
+      });
+      await tx.auditLog.create({
+        data: {
+          actorId: user.id,
+          action: "OFFER_CREATED",
+          entityId: result.id,
+        },
+      });
+      return result;
+    });
   }
   @Patch("gyms/:id") async update(
     @Req() req: Request,
@@ -377,6 +531,15 @@ export class AdminController {
       body,
     );
     return this.db.serializable(async (tx) => {
+      const current = await tx.offer.findUnique({ where: { id } });
+      if (
+        current?.kind === "DAY_PASS" &&
+        data.visits !== undefined &&
+        data.visits !== 1
+      )
+        throw new ForbiddenException(
+          "Un pase individual debe contener una sola visita.",
+        );
       const offer = await tx.offer.update({ where: { id }, data });
       await tx.auditLog.create({
         data: { actorId: user.id, action: "OFFER_UPDATED", entityId: id },

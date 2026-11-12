@@ -27,11 +27,20 @@ try {
     await new Promise((r) => setTimeout(r, 250));
   }
   if (!ready) throw Error("API de pruebas no inició");
-  const test = spawn(process.execPath, ["--test", "tests/integration.mjs"], {
-    cwd: root,
-    env,
-    stdio: "inherit",
-  });
+  const test = spawn(
+    process.execPath,
+    [
+      "--test",
+      "--test-concurrency=1",
+      "tests/integration.mjs",
+      "tests/admin-integration.mjs",
+    ],
+    {
+      cwd: root,
+      env,
+      stdio: "inherit",
+    },
+  );
   process.exitCode = await new Promise((resolve) => test.on("exit", resolve));
 } finally {
   api.kill("SIGTERM");

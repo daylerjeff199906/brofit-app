@@ -56,14 +56,12 @@ export async function createApp() {
       !["GET", "HEAD", "OPTIONS"].includes(req.method) &&
       req.headers.origin !== webOrigin
     ) {
-      res
-        .status(403)
-        .json({
-          error: {
-            code: "ORIGIN_REJECTED",
-            message: "Origen de solicitud no permitido.",
-          },
-        });
+      res.status(403).json({
+        error: {
+          code: "ORIGIN_REJECTED",
+          message: "Origen de solicitud no permitido.",
+        },
+      });
       return;
     }
     next();
@@ -72,7 +70,7 @@ export async function createApp() {
     try {
       const now = Date.now();
       const window = 15 * 60_000;
-      const path = req.path.replace(/\/$/, "");
+      const path = req.path.toLowerCase().replace(/\/$/, "");
       const authRequest =
         req.method === "POST" &&
         /^\/api\/auth\/(login|register|forgot-password|resend-verification|reset-password)/.test(
@@ -101,27 +99,23 @@ export async function createApp() {
         });
         if (bucket.count > key.max) {
           res.setHeader("Retry-After", "900");
-          res
-            .status(429)
-            .json({
-              error: {
-                code: "RATE_LIMITED",
-                message: "Demasiados intentos. Espera unos minutos.",
-              },
-            });
+          res.status(429).json({
+            error: {
+              code: "RATE_LIMITED",
+              message: "Demasiados intentos. Espera unos minutos.",
+            },
+          });
           return;
         }
       }
       next();
     } catch {
-      res
-        .status(503)
-        .json({
-          error: {
-            code: "UNAVAILABLE",
-            message: "Servicio temporalmente no disponible.",
-          },
-        });
+      res.status(503).json({
+        error: {
+          code: "UNAVAILABLE",
+          message: "Servicio temporalmente no disponible.",
+        },
+      });
     }
   });
   app.enableShutdownHooks();
@@ -140,6 +134,9 @@ async function bootstrap() {
         }),
         db.oAuthState.deleteMany({ where: { expiresAt: { lt: new Date() } } }),
         db.rateBucket.deleteMany({ where: { expiresAt: { lt: new Date() } } }),
+        db.partnerApplication.deleteMany({
+          where: { updatedAt: { lt: new Date(Date.now() - 180 * 86400_000) } },
+        }),
         db.mailJob.deleteMany({
           where: { sentAt: { lt: new Date(Date.now() - 7 * 86400_000) } },
         }),
